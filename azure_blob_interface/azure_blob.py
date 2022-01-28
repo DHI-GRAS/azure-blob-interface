@@ -42,10 +42,10 @@ class AzureStorageDriver(StorageDriver):
 
             if not overwrite and out_path.exists():
                 continue
+            print("Downloading: ", out_path)
             with open(str(out_path), "wb") as of:
                 mem_file = self.container.download_blob(str(filename)).readall()
                 of.write(mem_file)
-                print("Downloading: ", out_path)
 
     def get_block_blob_service(self):
         from azure.storage.blob import BlobServiceClient
@@ -129,7 +129,11 @@ class AzureStorageDriver(StorageDriver):
                     name_starts_with=prefix, include="metadata"
                 )
             ]
-            return files
+
+            if glob:
+                files = [path for path in files if path.match(glob)]
+
+            return sorted(files)
 
         files = [
             Path(f["name"])
