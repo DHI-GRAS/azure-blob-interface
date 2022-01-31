@@ -44,8 +44,9 @@ class AzureStorageDriver(StorageDriver):
                 continue
             print("Downloading: ", out_path)
             with open(str(out_path), "wb") as of:
-                mem_file = self.container.download_blob(str(filename)).readall()
-                of.write(mem_file)
+                blob_object = self.container.download_blob(str(filename), max_concurrency=10, timeout=3000)
+                blob_object.readinto(of)
+                #of.write(mem_file)
 
     def get_block_blob_service(self):
         from azure.storage.blob import BlobServiceClient
