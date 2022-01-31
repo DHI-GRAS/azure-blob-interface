@@ -54,7 +54,9 @@ class AzureStorageDriver(StorageDriver):
         from azure.storage.blob import BlobServiceClient
 
         account_url = os.getenv("ACCOUNT_URL")
-        block_blob_service = BlobServiceClient.from_connection_string(account_url)
+        block_blob_service = BlobServiceClient.from_connection_string(
+            account_url, retry_total=0
+        )
         return block_blob_service
 
     def get_container(self, container: str):
