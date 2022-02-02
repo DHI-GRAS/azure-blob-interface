@@ -48,7 +48,6 @@ class AzureStorageDriver(StorageDriver):
                     str(filename), max_concurrency=10, timeout=3000
                 )
                 blob_object.readinto(of)
-                # of.write(mem_file)
 
     def get_block_blob_service(self):
         from azure.storage.blob import BlobServiceClient
@@ -111,6 +110,7 @@ class AzureStorageDriver(StorageDriver):
                 blob_type="BlockBlob",
                 name=str(path_upload),
                 overwrite=True,
+                max_concurrency=10
             )
 
     def exists(self, blob_path: str):
