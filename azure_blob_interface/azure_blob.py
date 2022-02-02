@@ -110,7 +110,7 @@ class AzureStorageDriver(StorageDriver):
                 blob_type="BlockBlob",
                 name=str(path_upload),
                 overwrite=True,
-                max_concurrency=10
+                max_concurrency=10,
             )
 
     def exists(self, blob_path: str):
