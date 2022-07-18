@@ -65,7 +65,7 @@ class AzureStorageDriver(StorageDriver):
         self,
         path_local: Optional[Path] = None,
         path_upload: Optional[Path] = None,
-        overwrite: bool = False,
+        overwrite: bool = True,
         carry: Optional[Path] = None,
     ):
         """The data will up loaded to dir path_upload from dir path_local
