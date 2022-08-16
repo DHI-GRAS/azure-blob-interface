@@ -19,7 +19,11 @@ class AzureStorageDriver(StorageDriver):
             )
 
     def download(
-        self, prefix: str, path_local: Optional[Path] = None, overwrite: bool = False, **kwargs
+        self,
+        prefix: str,
+        path_local: Optional[Path] = None,
+        overwrite: bool = False,
+        **kwargs,
     ):
         """The data will be downloaded to path_local
         Assumes the data is in the working directory
@@ -67,7 +71,7 @@ class AzureStorageDriver(StorageDriver):
         path_upload: Optional[Path] = None,
         overwrite: bool = True,
         carry: Optional[Path] = None,
-        **kwargs
+        **kwargs,
     ):
         """The data will up loaded to dir path_upload from dir path_local
         Assumes the data is in the working directory.
@@ -93,7 +97,7 @@ class AzureStorageDriver(StorageDriver):
                     path_upload,
                     overwrite,
                     child_file.relative_to(path_local),
-                    **kwargs
+                    **kwargs,
                 )
         else:
             last_dir = Path(path_local.name) if path_local.is_dir() else Path()
@@ -101,10 +105,12 @@ class AzureStorageDriver(StorageDriver):
                 root_file,
                 path_upload / last_dir / carry.parent / root_file.name,
                 overwrite,
-                **kwargs
+                **kwargs,
             )
 
-    def _upload_file(self, path_local: Path, path_upload: Path, overwrite: bool, **kwargs):
+    def _upload_file(
+        self, path_local: Path, path_upload: Path, overwrite: bool, **kwargs
+    ):
         if not overwrite and self.exists(path_upload):
             return
         with open(path_local, "rb") as of:
@@ -114,7 +120,7 @@ class AzureStorageDriver(StorageDriver):
                 name=str(path_upload),
                 overwrite=True,
                 max_concurrency=10,
-                **kwargs
+                **kwargs,
             )
 
     def exists(self, blob_path: str):
