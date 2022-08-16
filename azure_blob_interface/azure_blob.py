@@ -6,9 +6,9 @@ from azure_blob_interface.storage import StorageDriver
 
 
 class AzureStorageDriver(StorageDriver):
-    def __init__(self, container: str):
-        self.container = self.get_container(container)
-        self.block_blob_service = self.get_block_blob_service()
+    def __init__(self, container: str, **kwargs):
+        self.container = self.get_container(container, **kwargs)
+        self.block_blob_service = self.get_block_blob_service(**kwargs)
         pass
 
     def _ensure_exists(self, blob_service, container_name, blob_name):
@@ -19,7 +19,11 @@ class AzureStorageDriver(StorageDriver):
             )
 
     def download(
-        self, prefix: str, path_local: Optional[Path] = None, overwrite: bool = False
+        self,
+        prefix: str,
+        path_local: Optional[Path] = None,
+        overwrite: bool = False,
+        **kwargs,
     ):
         """The data will be downloaded to path_local
         Assumes the data is in the working directory
@@ -45,21 +49,21 @@ class AzureStorageDriver(StorageDriver):
             print("Downloading: ", out_path)
             with open(str(out_path), "wb") as of:
                 blob_object = self.container.download_blob(
-                    str(filename), max_concurrency=10, timeout=3000
+                    str(filename), max_concurrency=10, timeout=3000, **kwargs
                 )
                 blob_object.readinto(of)
 
-    def get_block_blob_service(self):
+    def get_block_blob_service(self, **kwargs):
         from azure.storage.blob import BlobServiceClient
 
         account_url = os.getenv("ACCOUNT_URL")
         block_blob_service = BlobServiceClient.from_connection_string(
-            account_url, retry_total=0
+            account_url, retry_total=0, **kwargs
         )
         return block_blob_service
 
-    def get_container(self, container: str):
-        return self.get_block_blob_service().get_container_client(container)
+    def get_container(self, container: str, **kwargs):
+        return self.get_block_blob_service(**kwargs).get_container_client(container)
 
     def upload(
         self,
@@ -67,6 +71,7 @@ class AzureStorageDriver(StorageDriver):
         path_upload: Optional[Path] = None,
         overwrite: bool = True,
         carry: Optional[Path] = None,
+        **kwargs,
     ):
         """The data will up loaded to dir path_upload from dir path_local
         Assumes the data is in the working directory.
@@ -92,6 +97,7 @@ class AzureStorageDriver(StorageDriver):
                     path_upload,
                     overwrite,
                     child_file.relative_to(path_local),
+                    **kwargs,
                 )
         else:
             last_dir = Path(path_local.name) if path_local.is_dir() else Path()
@@ -99,9 +105,12 @@ class AzureStorageDriver(StorageDriver):
                 root_file,
                 path_upload / last_dir / carry.parent / root_file.name,
                 overwrite,
+                **kwargs,
             )
 
-    def _upload_file(self, path_local: Path, path_upload: Path, overwrite: bool):
+    def _upload_file(
+        self, path_local: Path, path_upload: Path, overwrite: bool, **kwargs
+    ):
         if not overwrite and self.exists(path_upload):
             return
         with open(path_local, "rb") as of:
@@ -111,6 +120,7 @@ class AzureStorageDriver(StorageDriver):
                 name=str(path_upload),
                 overwrite=True,
                 max_concurrency=10,
+                **kwargs,
             )
 
     def exists(self, blob_path: str):
