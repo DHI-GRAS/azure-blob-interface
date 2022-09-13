@@ -10,7 +10,7 @@ class AzureStorageDriver(StorageDriver):
     def __init__(self, container: str, logging_level=logging.ERROR, **kwargs):
         self.container = self.get_container(container, **kwargs)
         self.block_blob_service = self.get_block_blob_service(**kwargs)
-        logging.getLogger('azure').setLevel(logging_level)
+        logging.getLogger("azure").setLevel(logging_level)
 
     def _ensure_exists(self, blob_service, container_name, blob_name):
         if not blob_service.exists(container_name, blob_name):
