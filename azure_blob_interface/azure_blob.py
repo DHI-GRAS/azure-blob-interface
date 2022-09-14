@@ -1,15 +1,16 @@
 import os
 from pathlib import Path
 from typing import Optional
+import logging
 
 from azure_blob_interface.storage import StorageDriver
 
 
 class AzureStorageDriver(StorageDriver):
-    def __init__(self, container: str, **kwargs):
+    def __init__(self, container: str, logging_level=logging.ERROR, **kwargs):
         self.container = self.get_container(container, **kwargs)
         self.block_blob_service = self.get_block_blob_service(**kwargs)
-        pass
+        logging.getLogger("azure").setLevel(logging_level)
 
     def _ensure_exists(self, blob_service, container_name, blob_name):
         if not blob_service.exists(container_name, blob_name):
