@@ -63,5 +63,24 @@ def get_s3_path(aoi, sensor, level, year, month, day):
     )
 
 
+def parse_landsat_path(landsat_path):
+    collection, year, month, day = re.search(
+        "L[CE]0\d_([A-Z0-9]*)_\d{6}_(\d{4})(\d{2})(\d{2})_",
+        str(landsat_path),
+    ).groups()
+    return collection, int(year), int(month), int(day)
+
+
+def get_landsat_path(aoi, collection, year, month, day):
+    return (
+        Path("Landsat")
+        / collection
+        / aoi
+        / "{}".format(year)
+        / "{:02d}".format(month)
+        / "{:02d}".format(day)
+    )
+
+
 class ProductTypeNotSupported(Exception):
     pass
