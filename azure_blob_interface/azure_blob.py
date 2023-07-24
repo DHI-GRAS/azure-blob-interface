@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union, List
 import logging
 
 from azure_blob_interface.storage import StorageDriver
@@ -73,7 +73,7 @@ class AzureStorageDriver(StorageDriver):
         overwrite: bool = True,
         carry: Optional[Path] = None,
         **kwargs,
-    ):
+    ) -> Union[str, List[str]]:
         """The data will up loaded to dir path_upload from dir path_local
         Assumes the data is in the working directory.
 
@@ -92,22 +92,26 @@ class AzureStorageDriver(StorageDriver):
         carry = carry if carry else Path()
         root_file = path_local / carry
         if root_file.is_dir():
+            blob_urls = []
             for child_file in root_file.glob("*"):
-                self.upload(
+                blob_url = self.upload(
                     path_local,
                     path_upload,
                     overwrite,
                     child_file.relative_to(path_local),
                     **kwargs,
                 )
+                blob_urls.append(blob_url)
+            return blob_urls
         else:
             last_dir = Path(path_local.name) if path_local.is_dir() else Path()
-            self._upload_file(
+            blob_url = self._upload_file(
                 root_file,
                 path_upload / last_dir / carry.parent / root_file.name,
                 overwrite,
                 **kwargs,
             )
+            return blob_url
 
     def _upload_file(
         self, path_local: Path, path_upload: Path, overwrite: bool, **kwargs
@@ -115,7 +119,7 @@ class AzureStorageDriver(StorageDriver):
         if not overwrite and self.exists(path_upload):
             return
         with open(path_local, "rb") as of:
-            self.container.upload_blob(
+            blob_client = self.container.upload_blob(
                 data=of.read(),
                 blob_type="BlockBlob",
                 name=str(path_upload),
@@ -123,6 +127,7 @@ class AzureStorageDriver(StorageDriver):
                 max_concurrency=10,
                 **kwargs,
             )
+        return blob_client.url
 
     def exists(self, blob_path: str):
         return bool(list(self.container.list_blobs(name_starts_with=blob_path)))
