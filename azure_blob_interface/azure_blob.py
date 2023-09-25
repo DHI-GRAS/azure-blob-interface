@@ -3,6 +3,9 @@ from pathlib import Path
 from typing import Optional, Union, List
 import logging
 
+from azure.storage.blob import RehydratePriority
+from azure.storage.blob import StandardBlobTier
+
 from azure_blob_interface.storage import StorageDriver
 
 
@@ -177,3 +180,51 @@ class AzureStorageDriver(StorageDriver):
 
     def rename(self):
         pass
+
+    def copy(
+        self,
+        src_path,
+        dst_path,
+        dst_container_name=None,
+        dst_blob_tier=StandardBlobTier.HOT,
+        rehydrate_priority=RehydratePriority.STANDARD,
+        **kwargs,
+    ):
+        """Copy data from one blob to another in the same or different container. The source blob
+           can be in archive tier.
+
+           Can throw ResourceExistsError when source blob is in archive and destination blob did
+           not rehydrate yet before being overwritten.
+
+        Parameters
+        ----------
+        src_path: pathlib.Path
+            Path to the source blob
+        dst_path: pathlib.Path
+            Path to destination blob
+        dst_container_name: string
+            Name of destination container. If none, source container is also destination container
+        dst_blob_tier: azure.storage.blob.StandardBlobTier
+            Tier of the destination blob
+        rehydrate_priority: from azure.storage.blob.RehydratePriority
+            Rehydrate priority in case source blob is in archive tier
+        kwargs: dict
+            Additional parameters to pass to BlobClient.start_copy_from_url
+            https://learn.microsoft.com/en-us/python/api/azure-storage-blob/azure.storage.blob.blobclient?view=azure-python#azure-storage-blob-blobclient-start-copy-from-url
+        """
+
+        if dst_container_name is None:
+            dst_container = self.container
+        else:
+            dst_container = self.block_blob_service.get_container_client(
+                dst_container_name
+            )
+
+        src_blob = self.container.get_blob_client(str(src_path))
+        dst_blob = dst_container.get_blob_client(str(dst_path))
+        dst_blob.start_copy_from_url(
+            src_blob.url,
+            standard_blob_tier=dst_blob_tier,
+            rehydrate_priority=rehydrate_priority,
+            **kwargs,
+        )
