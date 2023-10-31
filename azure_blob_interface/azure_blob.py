@@ -5,7 +5,11 @@ import logging
 
 from azure.storage.blob import RehydratePriority
 from azure.storage.blob import StandardBlobTier
-from azure.core.exceptions import ServiceRequestError, ServiceResponseError, HttpResponseError
+from azure.core.exceptions import (
+    ServiceRequestError,
+    ServiceResponseError,
+    HttpResponseError,
+)
 
 from azure_blob_interface.storage import StorageDriver
 
@@ -126,7 +130,12 @@ class AzureStorageDriver(StorageDriver):
             return blob_url
 
     def _upload_file(
-        self, path_local: Path, path_upload: Path, overwrite: bool, retry: bool = False, **kwargs
+        self,
+        path_local: Path,
+        path_upload: Path,
+        overwrite: bool,
+        retry: bool = False,
+        **kwargs,
     ):
         if not overwrite and self.exists(path_upload):
             return
@@ -142,7 +151,9 @@ class AzureStorageDriver(StorageDriver):
                 )
         except (ServiceRequestError, ServiceResponseError, HttpResponseError) as e:
             if not retry:
-                self._upload_file(path_local, path_upload, overwrite, retry=True, **kwargs)
+                self._upload_file(
+                    path_local, path_upload, overwrite, retry=True, **kwargs
+                )
             else:
                 raise e
         return blob_client.url
