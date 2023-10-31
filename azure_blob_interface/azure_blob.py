@@ -5,6 +5,7 @@ import logging
 
 from azure.storage.blob import RehydratePriority
 from azure.storage.blob import StandardBlobTier
+from azure.core.exceptions import ServiceRequestError, ServiceResponseError, HttpResponseError
 
 from azure_blob_interface.storage import StorageDriver
 
@@ -27,6 +28,7 @@ class AzureStorageDriver(StorageDriver):
         prefix: str,
         path_local: Optional[Path] = None,
         overwrite: bool = False,
+        retry: bool = False,
         **kwargs,
     ):
         """The data will be downloaded to path_local
@@ -51,11 +53,18 @@ class AzureStorageDriver(StorageDriver):
             if not overwrite and out_path.exists():
                 continue
             print("Downloading: ", out_path)
-            with open(str(out_path), "wb") as of:
-                blob_object = self.container.download_blob(
-                    str(filename), max_concurrency=10, timeout=3000, **kwargs
-                )
-                blob_object.readinto(of)
+            try:
+                with open(str(out_path), "wb") as of:
+                    blob_object = self.container.download_blob(
+                        str(filename), max_concurrency=10, timeout=3000, **kwargs
+                    )
+                    blob_object.readinto(of)
+            except (ServiceRequestError, ServiceResponseError, HttpResponseError) as e:
+                if not retry:
+                    out_path.unlink(missing_ok=True)
+                    self.download(prefix, path_local, overwrite, retry=True, **kwargs)
+                else:
+                    raise e
 
     def get_block_blob_service(self, **kwargs):
         from azure.storage.blob import BlobServiceClient
@@ -117,19 +126,25 @@ class AzureStorageDriver(StorageDriver):
             return blob_url
 
     def _upload_file(
-        self, path_local: Path, path_upload: Path, overwrite: bool, **kwargs
+        self, path_local: Path, path_upload: Path, overwrite: bool, retry: bool = False, **kwargs
     ):
         if not overwrite and self.exists(path_upload):
             return
-        with open(path_local, "rb") as of:
-            blob_client = self.container.upload_blob(
-                data=of.read(),
-                blob_type="BlockBlob",
-                name=str(path_upload),
-                overwrite=True,
-                max_concurrency=10,
-                **kwargs,
-            )
+        try:
+            with open(path_local, "rb") as of:
+                blob_client = self.container.upload_blob(
+                    data=of.read(),
+                    blob_type="BlockBlob",
+                    name=str(path_upload),
+                    overwrite=True,
+                    max_concurrency=10,
+                    **kwargs,
+                )
+        except (ServiceRequestError, ServiceResponseError, HttpResponseError) as e:
+            if not retry:
+                self._upload_file(path_local, path_upload, overwrite, retry=True, **kwargs)
+            else:
+                raise e
         return blob_client.url
 
     def exists(self, blob_path: str):
