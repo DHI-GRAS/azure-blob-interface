@@ -5,6 +5,11 @@ import logging
 
 from azure.storage.blob import RehydratePriority
 from azure.storage.blob import StandardBlobTier
+from azure.core.exceptions import (
+    ServiceRequestError,
+    ServiceResponseError,
+    HttpResponseError,
+)
 
 from azure_blob_interface.storage import StorageDriver
 
@@ -27,6 +32,7 @@ class AzureStorageDriver(StorageDriver):
         prefix: str,
         path_local: Optional[Path] = None,
         overwrite: bool = False,
+        retries: int = 1,
         **kwargs,
     ):
         """The data will be downloaded to path_local
@@ -51,11 +57,24 @@ class AzureStorageDriver(StorageDriver):
             if not overwrite and out_path.exists():
                 continue
             print("Downloading: ", out_path)
-            with open(str(out_path), "wb") as of:
-                blob_object = self.container.download_blob(
-                    str(filename), max_concurrency=10, timeout=3000, **kwargs
-                )
-                blob_object.readinto(of)
+            tries = retries + 1
+            for i in range(tries):
+                try:
+                    with open(str(out_path), "wb") as of:
+                        blob_object = self.container.download_blob(
+                            str(filename), max_concurrency=10, timeout=3000, **kwargs
+                        )
+                        blob_object.readinto(of)
+                    break
+                except (
+                    ServiceRequestError,
+                    ServiceResponseError,
+                    HttpResponseError,
+                ) as e:
+                    if i + 1 == tries:
+                        raise e
+                    out_path.unlink(missing_ok=True)
+                    continue
 
     def get_block_blob_service(self, **kwargs):
         from azure.storage.blob import BlobServiceClient
@@ -75,6 +94,7 @@ class AzureStorageDriver(StorageDriver):
         path_upload: Optional[Path] = None,
         overwrite: bool = True,
         carry: Optional[Path] = None,
+        retries: int = 1,
         **kwargs,
     ) -> Union[str, List[str]]:
         """The data will up loaded to dir path_upload from dir path_local
@@ -112,24 +132,38 @@ class AzureStorageDriver(StorageDriver):
                 root_file,
                 path_upload / last_dir / carry.parent / root_file.name,
                 overwrite,
+                retries=retries,
                 **kwargs,
             )
             return blob_url
 
     def _upload_file(
-        self, path_local: Path, path_upload: Path, overwrite: bool, **kwargs
+        self,
+        path_local: Path,
+        path_upload: Path,
+        overwrite: bool,
+        retries: int,
+        **kwargs,
     ):
         if not overwrite and self.exists(path_upload):
             return
-        with open(path_local, "rb") as of:
-            blob_client = self.container.upload_blob(
-                data=of.read(),
-                blob_type="BlockBlob",
-                name=str(path_upload),
-                overwrite=True,
-                max_concurrency=10,
-                **kwargs,
-            )
+        tries = retries + 1
+        for i in range(tries):
+            try:
+                with open(path_local, "rb") as of:
+                    blob_client = self.container.upload_blob(
+                        data=of.read(),
+                        blob_type="BlockBlob",
+                        name=str(path_upload),
+                        overwrite=True,
+                        max_concurrency=10,
+                        **kwargs,
+                    )
+                    break
+            except (ServiceRequestError, ServiceResponseError, HttpResponseError) as e:
+                if i + 1 == tries:
+                    raise e
+                continue
         return blob_client.url
 
     def exists(self, blob_path: str):
