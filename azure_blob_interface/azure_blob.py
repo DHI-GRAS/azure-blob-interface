@@ -174,31 +174,43 @@ class AzureStorageDriver(StorageDriver):
         for file_path in blob_file_paths:
             self.container.delete_blob(file_path)
 
-    def list_files(self, prefix: str, glob: str = None, recursive: bool = False):
+    def list_files(self,
+                   prefix: str,
+                   glob: str = None,
+                   recursive: bool = False,
+                   retries: int = 1):
         """Assumes prefix is a directory and list all files and directories below it.
         If recursive is set, glob is ignored."""
 
         prefix_with_slash = f"{str(Path(prefix))}/"
 
-        if recursive:
-            files = [
-                Path(blob_path["name"])
-                for blob_path in self.container.list_blobs(
-                    name_starts_with=prefix, include="metadata"
-                )
-            ]
+        tries = retries + 1
+        for i in range(tries):
+            try:
+                if recursive:
+                    files = [
+                        Path(blob_path["name"])
+                        for blob_path in self.container.list_blobs(
+                            name_starts_with=prefix, include="metadata"
+                        )
+                    ]
 
-            if glob:
-                files = [path for path in files if path.match(glob)]
+                    if glob:
+                        files = [path for path in files if path.match(glob)]
 
-            return sorted(files)
+                    return sorted(files)
 
-        files = [
-            Path(f["name"])
-            for f in self.container.walk_blobs(
-                name_starts_with=prefix_with_slash, delimiter="/"
-            )
-        ]
+                files = [
+                    Path(f["name"])
+                    for f in self.container.walk_blobs(
+                        name_starts_with=prefix_with_slash, delimiter="/"
+                    )
+                ]
+                break
+            except (ServiceRequestError, ServiceResponseError, HttpResponseError) as e:
+                if i + 1 == tries:
+                    raise e
+                continue
 
         if not files:
             # The file listed is a blob and NOT a prefix
