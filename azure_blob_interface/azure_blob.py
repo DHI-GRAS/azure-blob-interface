@@ -174,11 +174,9 @@ class AzureStorageDriver(StorageDriver):
         for file_path in blob_file_paths:
             self.container.delete_blob(file_path)
 
-    def list_files(self,
-                   prefix: str,
-                   glob: str = None,
-                   recursive: bool = False,
-                   retries: int = 1):
+    def list_files(
+        self, prefix: str, glob: str = None, recursive: bool = False, retries: int = 1
+    ):
         """Assumes prefix is a directory and list all files and directories below it.
         If recursive is set, glob is ignored."""
 
