@@ -15,7 +15,13 @@ from azure_blob_interface.storage import StorageDriver
 
 
 class AzureStorageDriver(StorageDriver):
-    def __init__(self, container: str, logging_level=logging.ERROR, env_name: str = "ACCOUNT_URL", **kwargs):
+    def __init__(
+        self,
+        container: str,
+        logging_level=logging.ERROR,
+        env_name: str = "ACCOUNT_URL",
+        **kwargs,
+    ):
         self.container = self.get_container(container, **kwargs)
         self.block_blob_service = self.get_block_blob_service(env_name, **kwargs)
         logging.getLogger("azure").setLevel(logging_level)
