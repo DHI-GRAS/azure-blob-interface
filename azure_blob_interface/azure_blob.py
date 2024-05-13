@@ -92,7 +92,9 @@ class AzureStorageDriver(StorageDriver):
         return block_blob_service
 
     def get_container(self, container: str, env_name: str, **kwargs):
-        return self.get_block_blob_service(env_name, **kwargs).get_container_client(container)
+        return self.get_block_blob_service(env_name, **kwargs).get_container_client(
+            container
+        )
 
     def upload(
         self,
