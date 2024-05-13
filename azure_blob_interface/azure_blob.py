@@ -22,7 +22,7 @@ class AzureStorageDriver(StorageDriver):
         env_name: str = "ACCOUNT_URL",
         **kwargs,
     ):
-        self.container = self.get_container(container, **kwargs)
+        self.container = self.get_container(container, env_name=env_name, **kwargs)
         self.block_blob_service = self.get_block_blob_service(env_name, **kwargs)
         logging.getLogger("azure").setLevel(logging_level)
 
