@@ -15,9 +15,15 @@ from azure_blob_interface.storage import StorageDriver
 
 
 class AzureStorageDriver(StorageDriver):
-    def __init__(self, container: str, logging_level=logging.ERROR, **kwargs):
-        self.container = self.get_container(container, **kwargs)
-        self.block_blob_service = self.get_block_blob_service(**kwargs)
+    def __init__(
+        self,
+        container: str,
+        logging_level=logging.ERROR,
+        env_name: str = "ACCOUNT_URL",
+        **kwargs,
+    ):
+        self.container = self.get_container(container, env_name=env_name, **kwargs)
+        self.block_blob_service = self.get_block_blob_service(env_name, **kwargs)
         logging.getLogger("azure").setLevel(logging_level)
 
     def _ensure_exists(self, blob_service, container_name, blob_name):
@@ -76,17 +82,19 @@ class AzureStorageDriver(StorageDriver):
                     out_path.unlink(missing_ok=True)
                     continue
 
-    def get_block_blob_service(self, **kwargs):
+    def get_block_blob_service(self, env_name: str, **kwargs):
         from azure.storage.blob import BlobServiceClient
 
-        account_url = os.getenv("ACCOUNT_URL")
+        account_url = os.getenv(env_name)
         block_blob_service = BlobServiceClient.from_connection_string(
             account_url, retry_total=0, **kwargs
         )
         return block_blob_service
 
-    def get_container(self, container: str, **kwargs):
-        return self.get_block_blob_service(**kwargs).get_container_client(container)
+    def get_container(self, container: str, env_name: str, **kwargs):
+        return self.get_block_blob_service(env_name, **kwargs).get_container_client(
+            container
+        )
 
     def upload(
         self,
