@@ -38,7 +38,7 @@ class AzureStorageDriver(StorageDriver):
         prefix: str,
         path_local: Optional[Path] = None,
         overwrite: bool = False,
-        retries: int = 1,
+        retries: int = 3,
         **kwargs,
     ):
         """The data will be downloaded to path_local
@@ -102,7 +102,7 @@ class AzureStorageDriver(StorageDriver):
         path_upload: Optional[Path] = None,
         overwrite: bool = True,
         carry: Optional[Path] = None,
-        retries: int = 1,
+        retries: int = 3,
         **kwargs,
     ) -> Union[str, List[str]]:
         """The data will up loaded to dir path_upload from dir path_local
@@ -183,7 +183,7 @@ class AzureStorageDriver(StorageDriver):
             self.container.delete_blob(file_path)
 
     def list_files(
-        self, prefix: str, glob: str = None, recursive: bool = False, retries: int = 1
+        self, prefix: str, glob: str = None, recursive: bool = False, retries: int = 3
     ):
         """Assumes prefix is a directory and list all files and directories below it.
         If recursive is set, glob is ignored."""
