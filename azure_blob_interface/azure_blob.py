@@ -10,6 +10,7 @@ from azure.core.exceptions import (
     ServiceResponseError,
     HttpResponseError,
 )
+from urllib3.exceptions import SSLError
 
 from azure_blob_interface.storage import StorageDriver
 
@@ -76,6 +77,7 @@ class AzureStorageDriver(StorageDriver):
                     ServiceRequestError,
                     ServiceResponseError,
                     HttpResponseError,
+                    SSLError,
                 ) as e:
                     if i + 1 == tries:
                         raise e
@@ -168,7 +170,12 @@ class AzureStorageDriver(StorageDriver):
                         **kwargs,
                     )
                     break
-            except (ServiceRequestError, ServiceResponseError, HttpResponseError) as e:
+            except (
+                ServiceRequestError,
+                ServiceResponseError,
+                HttpResponseError,
+                SSLError,
+            ) as e:
                 if i + 1 == tries:
                     raise e
                 continue
@@ -213,7 +220,12 @@ class AzureStorageDriver(StorageDriver):
                     )
                 ]
                 break
-            except (ServiceRequestError, ServiceResponseError, HttpResponseError) as e:
+            except (
+                ServiceRequestError,
+                ServiceResponseError,
+                HttpResponseError,
+                SSLError,
+            ) as e:
                 if i + 1 == tries:
                     raise e
                 continue
