@@ -10,7 +10,7 @@ from azure.core.exceptions import (
     ServiceResponseError,
     HttpResponseError,
 )
-from urllib3.exceptions import SSLError
+from requests.exceptions import SSLError
 
 from azure_blob_interface.storage import StorageDriver
 
