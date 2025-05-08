@@ -17,7 +17,7 @@ def get_prefix(product_filename, product_type, aoi=""):
 
 def parse_s2_path(s2_path):
     level, year, month, day, tile = re.search(
-        "S2[AB]_MSI(L[12][AC])_(\d{4})(\d{2})(\d{2})T\d{6}_.*_.*_(T\d{2}\D{3})_",
+        "S2[ABCD]_MSI(L[12][AC])_(\d{4})(\d{2})(\d{2})T\d{6}_.*_.*_(T\d{2}\D{3})_",
         str(s2_path),
     ).groups()
     return level, tile, int(year), int(month), int(day)
@@ -36,7 +36,7 @@ def get_s2_path(level, tile, year, month, day):
 
 def parse_s3_path(s3_path):
     sensor, level, year, month, day = re.search(
-        "S3[AB]_([A-Z]{2})_(\d)_[A-Z]{3}____(\d{4})(\d{2})(\d{2})T\d{6}_",
+        "S3[ABCD]_([A-Z]{2})_(\d)_[A-Z]{3}____(\d{4})(\d{2})(\d{2})T\d{6}_",
         str(s3_path),
     ).groups()
     return sensor, level, int(year), int(month), int(day)
